@@ -27,7 +27,7 @@ async function run() {
 
     app.get('/jobs', async(req,res)=>{
         const result = await jobsCollection.find().toArray();
-        res.send(result);
+        res.send(result)
     })
      client.db("admin").command({ ping: 1 });
     console.log(
