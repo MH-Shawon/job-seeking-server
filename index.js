@@ -23,18 +23,25 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const jobsCollection = client.db("JobSeeking").collection("AllJobs");
+    const appliedJobsCollection = client.db("JobSeeking").collection("appliedJob");
 
 
-    app.get('/jobs', async(req,res)=>{
+    app.get('/api/v1/jobs', async(req,res)=>{
         const result = await jobsCollection.find().toArray();
         res.send(result)
     })
-    app.get('/jobs/:id', async(req,res)=>{
-      const id = req.params.id
-      const query = {_id: new ObjectId(id)};
+    app.get("/api/v1/jobs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await jobsCollection.findOne(query);
-      res.send(result)
-    })
+      res.send(result);
+    });
+    app.post("/api/v1/appliedJob", async(req,res)=>{
+      const job = req.body;
+      const result = await appliedJobsCollection.insertOne(job);
+      res.send(result);
+
+    });
      client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
