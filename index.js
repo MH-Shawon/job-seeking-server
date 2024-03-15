@@ -63,17 +63,16 @@ async function run() {
 
     app.get("/api/v1/addJobs", async (req, res) => {
       let query = {};
-      
-      if(req.query?.email){
-        query = {email: req.query.email}
+
+      if (req.query?.email) {
+        query = { loggedInUserEmail: req.query.email };
       }
-      
-      const result = await addJobsCollection.find(query).toArray()
-      res.send(result)
-      
+
+      const result = await addJobsCollection.find(query).toArray();
+      res.send(result);
     });
 
-    // delete jobs 
+    // delete jobs
 
     app.delete("/api/v1/addJobs/:id", async (req, res) => {
       const id = req.params.id;
@@ -84,15 +83,13 @@ async function run() {
       res.send(result);
     });
 
-
-    // for update get one job by id 
+    // for update get one job by id
     app.get("/api/v1/addJobs/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await addJobsCollection.findOne(query);
       res.send(result);
     });
-
 
     app.put("/api/v1/updateJobs/:id", async (req, res) => {
       const id = req.params.id;
@@ -110,7 +107,6 @@ async function run() {
         options
       );
       res.send(result);
-    
     });
 
     client.db("admin").command({ ping: 1 });
