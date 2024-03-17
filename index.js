@@ -27,6 +27,20 @@ const client = new MongoClient(uri, {
   },
 });
 
+const verifyToken = async (req, res, next) => {
+  const token = req.cookies?.token;
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+
 async function run() {
   try {
     const jobsCollection = client.db("JobSeeking").collection("AllJobs");
@@ -37,24 +51,9 @@ async function run() {
 
     // jwt related api
 
-    const verifyToken = async (req, res, next) => {
-      const token = req.cookies?.token;
-      console.log(token);
-      if (!token) {
-        return res.status(401).send({ message: "unauthorized access" });
-      }
-      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        if (err) {
-          return res.status(401).send({ message: "unauthorized access" });
-        }
-        req.user = decoded;
-        next();
-      });
-    };
-
     app.post("/jwt", async (req, res) => {
       const user = req.body;
-      console.log("token", user);
+      console.log(user);
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "1h",
       });
@@ -63,7 +62,6 @@ async function run() {
         .cookie("token", token, {
           httpOnly: true,
           secure: false,
-          sameSite: "none",
         })
         .send({ success: true });
     });
@@ -72,6 +70,7 @@ async function run() {
       const result = await jobsCollection.find().toArray();
       res.send(result);
     });
+
     app.get("/api/v1/jobs/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -96,30 +95,34 @@ async function run() {
 
       let query = {};
       if (req.query?.email) {
-        query.email = queryEmail;
+        query = { email: req.query.email };
       }
       const result = await appliedJobsCollection.find(query).toArray();
       res.send(result);
     });
 
     // add a job to db
-    app.post("/api/v1/addJob", async (req, res) => {
+    app.post("/api/v1/addJobs", async (req, res) => {
       const job = req.body;
-      const result = await addJobsCollection.insertOne(job);
+      const result = await jobsCollection.insertOne(job);
       res.send(result);
     });
 
     app.get("/api/v1/addJobs", verifyToken, async (req, res) => {
-      if (req.user.email !== req.query.email) {
+      const queryEmail = req.query?.email;
+      const tokenEmail = req.user?.email;
+      console.log(queryEmail, tokenEmail);
+      if (queryEmail !== tokenEmail) {
         return res.status(403).send({ message: "forbidden access" });
       }
+
       let query = {};
 
       if (req.query?.email) {
         query = { loggedInUserEmail: req.query.email };
       }
 
-      const result = await addJobsCollection.find(query).toArray();
+      const result = await jobsCollection.find(query).toArray();
       res.send(result);
     });
 
