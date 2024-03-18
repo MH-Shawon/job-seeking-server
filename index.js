@@ -8,7 +8,10 @@ const port = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: [
+      "https://job-seeking-cb1ed.web.app",
+      "https://job-seeking-cb1ed.firebaseapp.com",
+    ],
     credentials: true,
   })
 );
@@ -27,20 +30,6 @@ const client = new MongoClient(uri, {
   },
 });
 
-const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token;
-  if (!token) {
-    return res.status(401).send({ message: "unauthorized access" });
-  }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({ message: "unauthorized access" });
-    }
-    req.user = decoded;
-    next();
-  });
-};
-
 async function run() {
   try {
     const jobsCollection = client.db("JobSeeking").collection("AllJobs");
@@ -50,6 +39,20 @@ async function run() {
     const addJobsCollection = client.db("JobSeeking").collection("addJob");
 
     // jwt related api
+
+    const verifyToken = async (req, res, next) => {
+      const {token} = req.cookies;
+      if (!token) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: "unauthorized access" });
+        }
+        req.user = decoded;
+        next();
+      });
+    };
 
     app.post("/jwt", async (req, res) => {
       const user = req.body;
